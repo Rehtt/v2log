@@ -38,8 +38,12 @@ func main() {
 		c = 1
 	}
 	ch := make(chan struct{}, c) // 多协程处理
+	var (
+		line     []byte
+		isPrefix bool
+	)
 	for {
-		line, isPrefix, err := buf.ReadLine()
+		line, isPrefix, err = buf.ReadLine()
 		if err != nil && err.Error() == "EOF" || isPrefix {
 			break
 		}
