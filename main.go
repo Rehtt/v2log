@@ -49,6 +49,11 @@ func main() {
 			defer func() {
 				<-ch
 				w.Done()
+				if err := recover(); err != nil {
+					fmt.Println(string(line))
+					fmt.Println(err)
+					os.Exit(0)
+				}
 			}()
 			arr := bytes.Split(line, []byte(" "))
 			if len(arr) == 7 && string(arr[6]) == *emaill {
