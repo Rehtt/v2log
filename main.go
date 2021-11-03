@@ -2,10 +2,11 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"flag"
-	"fmt"
 	"os"
+	"sort"
+	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -16,7 +17,13 @@ var (
 	ipp    = flag.Bool("ip", false, "获取使用者ip")
 	urll   = flag.Bool("url", false, "获取访问路径")
 	o      *os.File
+	lock   sync.Mutex
 )
+
+type data struct {
+	key   string
+	value int
+}
 
 func main() {
 	flag.Parse()
@@ -24,13 +31,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	o, err = os.OpenFile(*out, os.O_CREATE, 0644)
+	o, err = os.OpenFile(*out, os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		panic(err)
 	}
 	defer o.Close()
 	buf := bufio.NewReader(f)
-	ips, urls := sync.Map{}, sync.Map{}
+	ips, urls := []data{}, []data{}
 	w := sync.WaitGroup{}
 
 	c := 10
@@ -38,63 +45,102 @@ func main() {
 		c = 1
 	}
 	ch := make(chan struct{}, c) // 多协程处理
-	var (
-		line     []byte
-		isPrefix bool
-	)
 	for {
 
-		line, isPrefix, err = buf.ReadLine()
+		line, isPrefix, err := buf.ReadLine()
 		if err != nil && err.Error() == "EOF" || isPrefix {
 			break
 		}
 		ch <- struct{}{}
 		w.Add(1)
-		go func(line []byte) {
+		go func(line string) {
 			defer func() {
 				<-ch
 				w.Done()
-				//if err := recover(); err != nil {
-				//	fmt.Println(string(line))
-				//	fmt.Println(err)
-				//	os.Exit(0)
-				//}
 			}()
-			arr := bytes.Split(line, []byte(" "))
-			if len(arr) == 7 && string(arr[6]) == *emaill {
+			arr := strings.Split(line, " ")
+			if len(arr) == 7 && arr[6] == *emaill {
 				//time := bytes.Join(arr[:2], []byte(" "))
 				// todo 完成一个ip对应多个路径
 				if *ipp {
-					ip := bytes.Split(arr[2], []byte(":"))[0]
-					ips.Store(string(ip), struct{}{})
+					ip := strings.Split(arr[2], ":")[0]
+					ips = toMap(ips, ip)
 				}
 				if *urll {
-					uri := bytes.Split(arr[4], []byte(":"))
+					uri := strings.Split(arr[4], ":")
 					//typee := uri[0]
 					url := uri[1]
 					//port := uri[2]
-					urls.Store(string(url), struct{}{})
+					urls = toMap(urls, url)
 				}
-				if !*ipp && !*urll {
-					o.Write(line)
-					o.WriteString("\n")
-				}
+				//if !*ipp && !*urll {
+				//	o.Write(line)
+				//	o.WriteString("\n")
+				//}
+
 			}
-		}(line)
+
+		}(string(line))
 	}
 	w.Wait()
+	// ip
 	if *ipp {
-		ips.Range(func(key, value interface{}) bool {
-			o.WriteString(key.(string) + "\n")
-			fmt.Println(key)
-			return true
+		o.WriteString("ip,频率\n")
+		var data strings.Builder
+		sort.Slice(ips, func(i, j int) bool {
+			return ips[i].value > ips[j].value
 		})
+		for _, v := range ips {
+			ip := strings.Split(v.key, ".")
+			if len(ip) == 4 {
+				f := true
+				for _, p := range ip {
+					num, err := strconv.Atoi(p)
+					if err != nil || num < 0 || num > 255 {
+						f = false
+						break
+					}
+				}
+				if !f {
+					continue
+				}
+				data.WriteString(v.key)
+				data.WriteByte(',')
+				data.WriteString(strconv.Itoa(v.value))
+				data.WriteByte('\n')
+			}
+		}
+		o.WriteString(data.String())
 	}
+	// url
 	if *urll {
-		urls.Range(func(key, value interface{}) bool {
-			o.WriteString(key.(string) + "\n")
-			return true
+		o.WriteString("url,频率\n")
+		var data strings.Builder
+		sort.Slice(urls, func(i, j int) bool {
+			return urls[i].value > urls[j].value
 		})
+		for _, v := range urls {
+			data.WriteString(v.key)
+			data.WriteByte(',')
+			data.WriteString(strconv.Itoa(v.value))
+			data.WriteByte('\n')
+		}
+		o.WriteString(data.String())
 	}
 
+}
+
+func toMap(m []data, key string) []data {
+	lock.Lock()
+	defer lock.Unlock()
+	for k, v := range m {
+		if v.key == key {
+			m[k].value++
+			return m
+		}
+	}
+	return append(m, data{
+		key:   key,
+		value: 1,
+	})
 }
