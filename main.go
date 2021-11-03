@@ -23,7 +23,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	o, err = os.OpenFile(*out, 644, os.ModeAppend)
+	o, err = os.OpenFile(*out, os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		panic(err)
 	}
