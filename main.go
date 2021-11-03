@@ -43,6 +43,7 @@ func main() {
 		isPrefix bool
 	)
 	for {
+
 		line, isPrefix, err = buf.ReadLine()
 		if err != nil && err.Error() == "EOF" || isPrefix {
 			break
@@ -53,32 +54,33 @@ func main() {
 			defer func() {
 				<-ch
 				w.Done()
-				if err := recover(); err != nil {
-					fmt.Println(string(line))
-					fmt.Println(err)
-					os.Exit(0)
-				}
+				//if err := recover(); err != nil {
+				//	fmt.Println(string(line))
+				//	fmt.Println(err)
+				//	os.Exit(0)
+				//}
 			}()
 			arr := bytes.Split(line, []byte(" "))
 			if len(arr) == 7 && string(arr[6]) == *emaill {
-				//time := bytes.Join(arr[:2], []byte(" "))
-				ip := bytes.Split(arr[2], []byte(":"))[0]
-				uri := bytes.Split(arr[4], []byte(":"))
-				//typee := uri[0]
-				url := uri[1]
-				//port := uri[2]
-
-				// todo 完成一个ip对应多个路径
-				if *ipp {
-					ips.Store(string(ip), struct{}{})
-				}
-				if *urll {
-					urls.Store(string(url), struct{}{})
-				}
-				if !*ipp && !*urll {
-					o.Write(line)
-					o.WriteString("\n")
-				}
+				fmt.Println(line)
+				////time := bytes.Join(arr[:2], []byte(" "))
+				//ip := bytes.Split(arr[2], []byte(":"))[0]
+				//uri := bytes.Split(arr[4], []byte(":"))
+				////typee := uri[0]
+				//url := uri[1]
+				////port := uri[2]
+				//
+				//// todo 完成一个ip对应多个路径
+				//if *ipp {
+				//	ips.Store(string(ip), struct{}{})
+				//}
+				//if *urll {
+				//	urls.Store(string(url), struct{}{})
+				//}
+				//if !*ipp && !*urll {
+				//	o.Write(line)
+				//	o.WriteString("\n")
+				//}
 			}
 		}(line)
 	}
