@@ -66,10 +66,10 @@ func main() {
 
 				// todo 完成一个ip对应多个路径
 				if *ipp {
-					ips.Store(ip, struct{}{})
+					ips.Store(string(ip), struct{}{})
 				}
 				if *urll {
-					urls.Store(url, struct{}{})
+					urls.Store(string(url), struct{}{})
 				}
 				if !*ipp && !*urll {
 					o.Write(line)
@@ -81,16 +81,14 @@ func main() {
 	w.Wait()
 	if *ipp {
 		ips.Range(func(key, value interface{}) bool {
-			o.Write(key.([]byte))
-			o.WriteString("\n")
+			o.WriteString(key.(string) + "\n")
 			fmt.Println(key)
 			return true
 		})
 	}
 	if *urll {
 		urls.Range(func(key, value interface{}) bool {
-			o.Write(key.([]byte))
-			o.WriteString("\n")
+			o.WriteString(key.(string) + "\n")
 			return true
 		})
 	}
