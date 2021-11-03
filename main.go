@@ -62,7 +62,7 @@ func main() {
 			}()
 			arr := bytes.Split(line, []byte(" "))
 			if len(arr) == 7 && string(arr[6]) == *emaill {
-				fmt.Println(line)
+				fmt.Println(string(line))
 				////time := bytes.Join(arr[:2], []byte(" "))
 				//ip := bytes.Split(arr[2], []byte(":"))[0]
 				//uri := bytes.Split(arr[4], []byte(":"))
