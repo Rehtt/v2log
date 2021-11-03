@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"flag"
+	"fmt"
 	"os"
 	"sync"
 )
@@ -71,6 +72,7 @@ func main() {
 		ips.Range(func(key, value interface{}) bool {
 			o.Write(key.([]byte))
 			o.Write([]byte("\n"))
+			fmt.Println(key)
 			return true
 		})
 	}
