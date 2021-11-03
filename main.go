@@ -13,7 +13,7 @@ import (
 var (
 	file   = flag.String("f", "access.log", "输入文件")
 	emaill = flag.String("e", "", "email")
-	out    = flag.String("o", "out.log", "输出文件")
+	out    = flag.String("o", "out.csv", "输出文件")
 	ipp    = flag.Bool("ip", false, "获取使用者ip")
 	urll   = flag.Bool("url", false, "获取访问路径")
 	o      *os.File
@@ -32,6 +32,7 @@ func main() {
 		panic(err)
 	}
 	o, err = os.OpenFile(*out, os.O_CREATE|os.O_TRUNC, 0644)
+	o.WriteString("\xEF\xBB\xBF") //添加BOM，防止中文乱码
 	if err != nil {
 		panic(err)
 	}
@@ -40,7 +41,7 @@ func main() {
 	ips, urls := []data{}, []data{}
 	w := sync.WaitGroup{}
 
-	c := 10
+	c := 20
 	if !*ipp && !*urll {
 		c = 1
 	}
@@ -73,10 +74,10 @@ func main() {
 					//port := uri[2]
 					urls = toMap(urls, url)
 				}
-				//if !*ipp && !*urll {
-				//	o.Write(line)
-				//	o.WriteString("\n")
-				//}
+				if !*ipp && !*urll {
+					o.WriteString(line + "\n")
+					o.WriteString("\n")
+				}
 
 			}
 
