@@ -62,25 +62,23 @@ func main() {
 			}()
 			arr := bytes.Split(line, []byte(" "))
 			if len(arr) == 7 && string(arr[6]) == *emaill {
-				fmt.Println(string(line))
-				////time := bytes.Join(arr[:2], []byte(" "))
-				//ip := bytes.Split(arr[2], []byte(":"))[0]
-				//uri := bytes.Split(arr[4], []byte(":"))
-				////typee := uri[0]
-				//url := uri[1]
-				////port := uri[2]
-				//
-				//// todo 完成一个ip对应多个路径
-				//if *ipp {
-				//	ips.Store(string(ip), struct{}{})
-				//}
-				//if *urll {
-				//	urls.Store(string(url), struct{}{})
-				//}
-				//if !*ipp && !*urll {
-				//	o.Write(line)
-				//	o.WriteString("\n")
-				//}
+				//time := bytes.Join(arr[:2], []byte(" "))
+				// todo 完成一个ip对应多个路径
+				if *ipp {
+					ip := bytes.Split(arr[2], []byte(":"))[0]
+					ips.Store(string(ip), struct{}{})
+				}
+				if *urll {
+					uri := bytes.Split(arr[4], []byte(":"))
+					//typee := uri[0]
+					url := uri[1]
+					//port := uri[2]
+					urls.Store(string(url), struct{}{})
+				}
+				if !*ipp && !*urll {
+					o.Write(line)
+					o.WriteString("\n")
+				}
 			}
 		}(line)
 	}
