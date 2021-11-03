@@ -24,7 +24,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	o, err = os.OpenFile(*out, os.O_APPEND|os.O_CREATE, 0644)
+	o, err = os.OpenFile(*out, os.O_CREATE, 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -32,13 +32,15 @@ func main() {
 	buf := bufio.NewReader(f)
 	ips, urls := sync.Map{}, sync.Map{}
 	w := sync.WaitGroup{}
-	ch := make(chan struct{}, 10) // 多协程处理
+
+	c := 10
+	if !*ipp && !*urll {
+		c = 1
+	}
+	ch := make(chan struct{}, c) // 多协程处理
 	for {
-		line, next, err := buf.ReadLine()
-		if err != nil {
-			panic(err)
-		}
-		if !next {
+		line, isPrefix, err := buf.ReadLine()
+		if err != nil && err.Error() == "EOF" || isPrefix {
 			break
 		}
 		ch <- struct{}{}
@@ -64,6 +66,10 @@ func main() {
 				if *urll {
 					urls.Store(url, struct{}{})
 				}
+				if !*ipp && !*urll {
+					o.Write(line)
+					o.WriteString("\n")
+				}
 			}
 		}(line)
 	}
@@ -71,7 +77,7 @@ func main() {
 	if *ipp {
 		ips.Range(func(key, value interface{}) bool {
 			o.Write(key.([]byte))
-			o.Write([]byte("\n"))
+			o.WriteString("\n")
 			fmt.Println(key)
 			return true
 		})
@@ -79,8 +85,9 @@ func main() {
 	if *urll {
 		urls.Range(func(key, value interface{}) bool {
 			o.Write(key.([]byte))
-			o.Write([]byte("\n"))
+			o.WriteString("\n")
 			return true
 		})
 	}
+
 }
