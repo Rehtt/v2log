@@ -3,6 +3,11 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
+	"github.com/lionsoul2014/ip2region/binding/golang/ip2region"
+	"io"
+	"log"
+	"net/http"
 	"os"
 	"sort"
 	"strconv"
@@ -18,6 +23,7 @@ var (
 	urll   = flag.Bool("url", false, "获取访问路径")
 	o      *os.File
 	lock   sync.Mutex
+	region *ip2region.Ip2Region
 )
 
 type data struct {
@@ -32,7 +38,7 @@ func main() {
 		panic(err)
 	}
 	o, err = os.OpenFile(*out, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
-	o.WriteString("\xEF\xBB\xBF") //添加BOM，防止中文乱码
+	o.WriteString("\xEF\xBB\xBF") //添加utf-8 BOM头，识别为uft-8编码，防止中文乱码
 	if err != nil {
 		panic(err)
 	}
@@ -85,7 +91,7 @@ func main() {
 	w.Wait()
 	// ip
 	if *ipp {
-		o.WriteString("ip,频率\n")
+		o.WriteString("ip,频率,位置\n")
 		var data strings.Builder
 		sort.Slice(ips, func(i, j int) bool {
 			return ips[i].value > ips[j].value
@@ -107,6 +113,8 @@ func main() {
 				data.WriteString(v.key)
 				data.WriteByte(',')
 				data.WriteString(strconv.Itoa(v.value))
+				data.WriteByte(',')
+				data.WriteString(ip2addr(v.key))
 				data.WriteByte('\n')
 			}
 		}
@@ -143,4 +151,45 @@ func toMap(m []data, key string) []data {
 		key:   key,
 		value: 1,
 	})
+}
+
+func ip2addr(ip string) string {
+	if region == nil {
+		_, err := os.Open("ip2region.db")
+		if err != nil {
+			if err = download("https://github.com/lionsoul2014/ip2region/raw/master/data/ip2region.db"); err != nil {
+				panic(err)
+			}
+		}
+		region, err = ip2region.New("ip2region.db")
+		if err != nil {
+			panic(err)
+		}
+	}
+	i, err := region.BinarySearch(ip)
+	if err != nil {
+		log.Println(err)
+		return ""
+	}
+	return i.String()
+}
+
+func download(url string) error {
+	fmt.Println("downloading...")
+	res, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	n := strings.Split(url, "/")
+	c, err := os.Create(n[len(n)-1])
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(c, res.Body)
+	if err != nil {
+		return err
+	}
+	fmt.Println("download done")
+	return nil
 }
