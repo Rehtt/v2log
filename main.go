@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	o, err = os.OpenFile(*out, os.O_CREATE|os.O_TRUNC, 0644)
+	o, err = os.OpenFile(*out, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	o.WriteString("\xEF\xBB\xBF") //添加BOM，防止中文乱码
 	if err != nil {
 		panic(err)
