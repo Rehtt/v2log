@@ -21,6 +21,7 @@ var (
 	out    = flag.String("o", "out.csv", "输出文件")
 	ipp    = flag.Bool("ip", false, "获取使用者ip")
 	urll   = flag.Bool("url", false, "获取访问路径")
+	c      = flag.Int("c", 20, "多协程分析文件")
 	o      *os.File
 	lock   sync.Mutex
 	region *ip2region.Ip2Region
@@ -46,11 +47,10 @@ func main() {
 	ips, urls := []data{}, []data{}
 	w := sync.WaitGroup{}
 
-	c := 20
 	if !*ipp && !*urll {
-		c = 1
+		*c = 1
 	}
-	ch := make(chan struct{}, c) // 多协程处理
+	ch := make(chan struct{}, *c) // 多协程处理
 	for {
 
 		line, isPrefix, err := buf.ReadLine()
