@@ -36,7 +36,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer o.Close()
 	buf := bufio.NewReader(f)
 	ips, urls := []data{}, []data{}
 	w := sync.WaitGroup{}
@@ -128,7 +127,7 @@ func main() {
 		}
 		o.WriteString(data.String())
 	}
-
+	o.Close()
 }
 
 func toMap(m []data, key string) []data {
